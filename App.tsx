@@ -743,20 +743,20 @@ export default function App() {
         <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                <Icon name="cube" className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-400/30">
+                <span className="font-bold font-orbitron text-white text-sm tracking-widest">HP</span>
               </div>
               <div>
-                <h1 className="font-bold text-sm tracking-wide text-white font-orbitron">CID ARCH AI</h1>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                  PRO 3.1
+                <h1 className="font-bold text-sm tracking-wide text-amber-200 font-orbitron">HOÀN PHẠM ARCH</h1>
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  DESIGN STUDIO
                 </span>
               </div>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 mx-auto">
-              <Icon name="cube" className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-400/30 mx-auto" title="HOÀN PHẠM ARCHITECTURE">
+              <span className="font-bold font-orbitron text-white text-sm tracking-widest">HP</span>
             </div>
           )}
           <button 
@@ -840,7 +840,9 @@ export default function App() {
             </button>
             <div>
               <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                {currentTabInfo.label}
+                <span className="text-amber-400 font-orbitron tracking-wide">HOÀN PHẠM</span>
+                <span className="text-slate-600">|</span>
+                <span>{currentTabInfo.label}</span>
               </h2>
               <p className="text-[11px] text-slate-400 hidden sm:block">{currentTabInfo.desc}</p>
             </div>
