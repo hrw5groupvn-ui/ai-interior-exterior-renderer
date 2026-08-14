@@ -1,6 +1,46 @@
-import { GoogleGenAI, Modality } from "@google/genai";
-import type { GenerateContentResponse } from "@google/genai";
-import type { SourceImage } from '../types';
+export type GeminiModelId = 'gemini-3.6-flash' | 'gemini-3.5-flash-lite' | 'gemini-3.1-pro-image';
+
+export interface GeminiModelInfo {
+  id: GeminiModelId;
+  name: string;
+  badge: string;
+  desc: string;
+  icon: string;
+}
+
+export const GEMINI_MODELS: GeminiModelInfo[] = [
+  {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6',
+    badge: 'Khuyên dùng',
+    desc: 'Tốc độ & Chất lượng cao nhất',
+    icon: '✨'
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite',
+    badge: 'Nhanh',
+    desc: 'Tiết kiệm & Phản hồi siêu tốc',
+    icon: '⚡'
+  },
+  {
+    id: 'gemini-3.1-pro-image',
+    name: 'Gemini 3.1 Pro',
+    badge: 'Pro',
+    desc: 'Chi tiết cao & Bố cục phức tạp',
+    icon: '🚀'
+  }
+];
+
+let currentSelectedModel: GeminiModelId = 'gemini-3.6-flash';
+
+export const getSelectedModel = (): GeminiModelId => {
+  return currentSelectedModel;
+};
+
+export const setSelectedModel = (model: GeminiModelId): void => {
+  currentSelectedModel = model;
+};
 
 const getApiKey = (): string => {
   return (typeof process !== 'undefined' && process.env && (process.env.API_KEY || process.env.GEMINI_API_KEY)) || '';
@@ -42,7 +82,7 @@ export const describeInteriorImage = async (sourceImage: SourceImage): Promise<s
   const engineeredPrompt = "As an expert interior designer, describe the provided image of a room in Vietnamese. Focus on the style (e.g., modern, minimalist, classic), key materials (e.g., wood floors, marble countertops), furniture, and the overall lighting and mood. The description should be suitable for use as a prompt to regenerate the image. Be descriptive and detailed.";
 
   const response = await getAIClient().models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: getSelectedModel(),
     contents: {
       parts: [
         { inlineData: { data: sourceImage.base64, mimeType: sourceImage.mimeType } },
@@ -118,7 +158,7 @@ export const generateImages = async (
     parts.push(textPart);
     
     const response = await getAIClient().models.generateContent({
-        model: 'gemini-3.1-flash-image',
+        model: getSelectedModel(),
         contents: { parts },
         config: {
           responseModalities: [Modality.IMAGE, Modality.TEXT],
@@ -150,7 +190,7 @@ export const upscaleImage = async (
   const prompt = `Upscale this image to ${target.toUpperCase()} resolution. Enhance details, sharpness, and clarity while preserving the original content, style, and composition. Make it photorealistic.`;
 
   const response = await getAIClient().models.generateContent({
-      model: 'gemini-3.1-flash-image',
+      model: getSelectedModel(),
       contents: {
         parts: [
           {
@@ -209,7 +249,7 @@ export const editImage = async (
     parts.push({ text: engineeredPrompt });
 
     const response = await getAIClient().models.generateContent({
-      model: 'gemini-3.1-flash-image',
+      model: getSelectedModel(),
       contents: {
         parts,
       },
@@ -236,7 +276,7 @@ export const generateImageFromText = async (prompt: string): Promise<string | nu
     }
 
     const response = await getAIClient().models.generateContent({
-        model: 'gemini-3.1-flash-image',
+        model: getSelectedModel(),
         contents: {
             parts: [
                 {

@@ -14,7 +14,7 @@ const dataUrlToSourceImage = (dataUrl: string): SourceImage | null => {
 export const DownloadDropdown: React.FC<{ 
     imageUrl: string; 
     filenamePrefix?: string;
-}> = ({ imageUrl, filenamePrefix = 'CID-AI' }) => {
+}> = ({ imageUrl, filenamePrefix = '96-ARCH-AI' }) => {
   const [isDownloading2K, setIsDownloading2K] = useState(false);
   const [isDownloading4K, setIsDownloading4K] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);

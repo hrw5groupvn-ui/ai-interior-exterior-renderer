@@ -1,12 +1,81 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { RenderHistoryItem, SourceImage, EditHistoryItem } from './types';
-import { generateImages, upscaleImage, describeInteriorImage } from './services/geminiService';
+import { generateImages, upscaleImage, describeInteriorImage, GEMINI_MODELS, getSelectedModel, setSelectedModel, GeminiModelId } from './services/geminiService';
 import { Icon } from './components/icons';
 import { DownloadDropdown } from './components/DownloadDropdown';
 import { ImageEditor } from './components/ImageEditor';
 import { UtilitiesTab } from './components/UtilitiesTab';
 import { MagicPromptTab } from './components/MagicPromptTab';
 import { VirtualTourTab } from './components/VirtualTourTab';
+
+// --- Model Selector Dropdown Component ---
+const ModelSelector: React.FC<{
+  currentModel: GeminiModelId;
+  onSelectModel: (id: GeminiModelId) => void;
+}> = ({ currentModel, onSelectModel }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const activeModel = GEMINI_MODELS.find(m => m.id === currentModel) || GEMINI_MODELS[0];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500/70 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-md transition-all group"
+        title="Đổi mô hình Gemini AI"
+      >
+        <span className="text-sm">{activeModel.icon}</span>
+        <span className="font-bold text-white tracking-wide">{activeModel.name}</span>
+        <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono">
+          {activeModel.badge}
+        </span>
+        <Icon name="chevron-down" className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
+          <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="px-3 py-2 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Chọn Mô Hình Gemini AI
+            </div>
+            <div className="space-y-1 mt-1">
+              {GEMINI_MODELS.map((m) => {
+                const isSelected = m.id === currentModel;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      onSelectModel(m.id);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left p-2.5 rounded-xl transition flex items-start gap-2.5 ${
+                      isSelected
+                        ? 'bg-indigo-600/20 border border-indigo-500/50 text-white'
+                        : 'hover:bg-slate-800/80 text-slate-300'
+                    }`}
+                  >
+                    <span className="text-base mt-0.5">{m.icon}</span>
+                    <div className="flex-grow min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-100">{m.name}</span>
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold ${
+                          isSelected ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                        }`}>
+                          {m.badge}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const safeSetStorage = (key: string, value: any) => {
     try {
@@ -271,7 +340,7 @@ const ResultDisplay: React.FC<{
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/50 rounded-xl animate-pulse-glow">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
             <p className="text-slate-200 font-semibold">Đang tổng hợp & render {expectedCount} phương án AI...</p>
-            <p className="text-xs text-slate-500 mt-1">Sử dụng mô hình Gemini 3.1 Flash Architectural Renderer</p>
+            <p className="text-xs text-slate-500 mt-1">Sử dụng mô hình {GEMINI_MODELS.find(m => m.id === selectedModel)?.name || 'Gemini'} AI Renderer</p>
           </div>
         ) : selectedImage ? (
           <div className="relative group w-full h-full flex items-center justify-center">
@@ -462,7 +531,7 @@ const ZaloModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
         <div className="pt-12 pb-6 px-6 text-center">
           <h3 className="text-lg font-bold text-slate-100">Vũ Hoàng Anh</h3>
-          <p className="text-slate-400 text-xs mb-4">Hỗ trợ kỹ thuật & Tư vấn CID AI</p>
+          <p className="text-slate-400 text-xs mb-4">Hỗ trợ kỹ thuật & Tư vấn 96 ARCH AI</p>
           <div className="border border-slate-800 p-2 rounded-xl inline-block mb-3 bg-slate-950">
              <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://zalo.me/090" alt="Zalo QR Code" className="w-40 h-40 object-cover rounded-lg" onError={(e) => {
                  e.currentTarget.src = "https://via.placeholder.com/180?text=Zalo+QR";
@@ -489,7 +558,7 @@ const DonateModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <Icon name="heart" className="w-7 h-7 text-white" />
           </div>
           <h3 className="text-xl font-bold text-slate-100">Ủng Hộ Tác Giả</h3>
-          <p className="text-slate-400 text-xs mt-1">Tiếp sức phát triển CID AI Render Studio</p>
+          <p className="text-slate-400 text-xs mt-1">Tiếp sức phát triển 96 ARCH AI Render Studio</p>
         </div>
         
         <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 mb-4 text-left">
@@ -500,17 +569,17 @@ const DonateModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </div>
             <div>
               <p className="text-[10px] text-slate-500 font-medium uppercase">Số tài khoản</p>
-              <p className="text-xl font-mono font-bold text-white tracking-wider">5060396868</p>
+              <p className="text-xl font-mono font-bold text-white tracking-wider">1903 1417 1760 32</p>
             </div>
             <div>
               <p className="text-[10px] text-slate-500 font-medium uppercase">Chủ tài khoản</p>
-              <p className="text-sm font-bold text-slate-200 uppercase">Vũ Hoàng Anh</p>
+              <p className="text-sm font-bold text-slate-200 uppercase">PHAM TU HOAN</p>
             </div>
           </div>
         </div>
         
         <div className="text-center">
-           <img src="https://img.vietqr.io/image/techcombank-5060396868-compact.png?accountName=VU%20HOANG%20ANH" alt="QR Code" className="w-40 h-40 object-cover rounded-xl mx-auto border border-slate-800 bg-white" onError={(e) => {
+           <img src="https://img.vietqr.io/image/techcombank-19031417176032-compact.png?accountName=PHAM%20TU%20HOAN" alt="QR Code" className="w-40 h-40 object-cover rounded-xl mx-auto border border-slate-800 bg-white" onError={(e) => {
              e.currentTarget.src = "https://via.placeholder.com/180?text=QR+Code";
            }} />
         </div>
@@ -523,6 +592,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'exterior' | 'interior' | 'floorplan' | 'edit' | 'utilities' | 'virtual-tour' | 'magic-prompt'>('exterior');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [selectedModel, setModel] = useState<GeminiModelId>(getSelectedModel());
+  const handleModelChange = (modelId: GeminiModelId) => {
+    setSelectedModel(modelId);
+    setModel(modelId);
+  };
 
   const [showDonate, setShowDonate] = useState(false);
   const [showZalo, setShowZalo] = useState(false);
@@ -744,10 +819,10 @@ export default function App() {
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-400/30">
-                <span className="font-bold font-orbitron text-white text-sm tracking-widest">HP</span>
+                <span className="font-bold font-orbitron text-white text-sm tracking-widest">96</span>
               </div>
               <div>
-                <h1 className="font-bold text-sm tracking-wide text-amber-200 font-orbitron">HOÀN PHẠM ARCH</h1>
+                <h1 className="font-bold text-sm tracking-wide text-amber-200 font-orbitron">96 ARCH AI</h1>
                 <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   DESIGN STUDIO
                 </span>
@@ -755,8 +830,8 @@ export default function App() {
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-400/30 mx-auto" title="HOÀN PHẠM ARCHITECTURE">
-              <span className="font-bold font-orbitron text-white text-sm tracking-widest">HP</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-400/30 mx-auto" title="96 ARCH AI Studio">
+              <span className="font-bold font-orbitron text-white text-sm tracking-widest">96</span>
             </div>
           )}
           <button 
@@ -799,11 +874,13 @@ export default function App() {
         {!sidebarCollapsed && (
           <div className="p-4 border-t border-slate-800/80 bg-slate-900/40 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Gemini 3.1 Flash
+              <span className="flex items-center gap-1.5 font-medium">
+                <span>{GEMINI_MODELS.find(m => m.id === selectedModel)?.icon || '✨'}</span>
+                <span>{GEMINI_MODELS.find(m => m.id === selectedModel)?.name || 'Gemini 3.6'}</span>
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">v1.20</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                {GEMINI_MODELS.find(m => m.id === selectedModel)?.badge || 'Active'}
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1">
@@ -840,7 +917,7 @@ export default function App() {
             </button>
             <div>
               <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <span className="text-amber-400 font-orbitron tracking-wide">HOÀN PHẠM</span>
+                <span className="text-amber-400 font-orbitron tracking-wide">96 ARCH AI</span>
                 <span className="text-slate-600">|</span>
                 <span>{currentTabInfo.label}</span>
               </h2>
@@ -849,9 +926,11 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-slate-800/60 border border-slate-700 px-3 py-1 rounded-full text-xs font-mono text-slate-300">
+            <ModelSelector currentModel={selectedModel} onSelectModel={handleModelChange} />
+
+            <div className="hidden lg:flex items-center gap-2 bg-slate-800/60 border border-slate-700 px-3 py-1 rounded-full text-xs font-mono text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              API Status: Ready
+              API Ready
             </div>
             
             <button

@@ -363,7 +363,7 @@ const AdjustableResultImage: React.FC<{
                     <Icon name="pencil" className="w-4 h-4" />
                     <span>Sửa</span>
                 </button>
-                <DownloadDropdown imageUrl={adjustedUrl} filenamePrefix={`CID AI-utility-${taskId}-${idx}`} />
+                <DownloadDropdown imageUrl={adjustedUrl} filenamePrefix={`96-ARCH-AI-utility-${taskId}-${idx}`} />
             </div>
         </div>
     );
@@ -460,7 +460,7 @@ const UtilityRunner: React.FC<{
                          setResultImages([{ url: safeImgData }]);
                     }
                 }
-                pdf.save(`CID-AI-Export-${Date.now()}.pdf`);
+                pdf.save(`96-ARCH-AI-Export-${Date.now()}.pdf`);
                 alert("Xuất PDF thành công!");
                 setIsLoading(false);
                 return;
@@ -475,7 +475,7 @@ const UtilityRunner: React.FC<{
                 pdf.setTextColor(50, 50, 50);
                 pdf.text(prompt || 'Tai lieu Render', pdfWidth / 2, 15, { align: 'center' });
                 
-                pdf.save(`CID-AI-Export-${Date.now()}.pdf`);
+                pdf.save(`96-ARCH-AI-Export-${Date.now()}.pdf`);
                 
                 alert("Xuất PDF thành công!");
                 setIsLoading(false);
