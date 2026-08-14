@@ -521,24 +521,28 @@ const ZaloModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full relative shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-3 right-3 text-slate-400 hover:text-white transition z-10">
+        <button onClick={onClose} className="absolute top-3 right-3 text-slate-400 hover:text-white transition z-10 bg-slate-950/60 p-1.5 rounded-full border border-slate-800 hover:bg-slate-800">
           <Icon name="x-mark" className="w-5 h-5" />
         </button>
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-20 w-full relative">
-           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-lg">
-             <img src="https://ui-avatars.com/api/?name=Vũ+Hoàng+Anh&background=0D8ABC&color=fff&size=128" alt="Avatar" className="w-full h-full object-cover" />
-           </div>
-        </div>
-        <div className="pt-12 pb-6 px-6 text-center">
-          <h3 className="text-lg font-bold text-slate-100">Vũ Hoàng Anh</h3>
-          <p className="text-slate-400 text-xs mb-4">Hỗ trợ kỹ thuật & Tư vấn 96 ARCH AI</p>
-          <div className="border border-slate-800 p-2 rounded-xl inline-block mb-3 bg-slate-950">
-             <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://zalo.me/090" alt="Zalo QR Code" className="w-40 h-40 object-cover rounded-lg" onError={(e) => {
-                 e.currentTarget.src = "https://via.placeholder.com/180?text=Zalo+QR";
-             }} />
+        <div className="p-5 text-center">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-slate-100">Hoàn Phạm</h3>
+            <p className="text-slate-400 text-xs mt-0.5">Liên hệ Zalo Hỗ Trợ & Tư vấn 96 ARCH AI</p>
           </div>
-          <p className="text-slate-500 text-xs flex items-center justify-center gap-1">
-             Quét QR bằng Zalo để kết bạn tư vấn
+          
+          <div className="border border-slate-800 p-1.5 rounded-2xl bg-white shadow-2xl inline-block max-w-[270px]">
+             <img 
+               src="/zalo-qr.jpg" 
+               alt="Zalo QR Hoàn Phạm" 
+               className="w-full h-auto rounded-xl object-contain"
+               onError={(e) => {
+                 e.currentTarget.src = "/zalo-qr.jpg";
+               }} 
+             />
+          </div>
+          
+          <p className="text-slate-400 text-xs mt-4 flex items-center justify-center gap-1.5 font-medium">
+             <span>📲</span> Mở Zalo bấm nút quét QR để kết bạn
           </p>
         </div>
       </div>
