@@ -4,6 +4,7 @@ import {
   generateImages,
   upscaleImage,
   describeInteriorImage,
+  buildInteriorPromptFromReference,
   testGeminiConnection,
   GEMINI_MODELS,
   getSelectedModel,
@@ -295,7 +296,10 @@ const ReferenceImageUpload: React.FC<{
   image: SourceImage | null;
   onUpload: (image: SourceImage) => void;
   onRemove: () => void;
-}> = ({ image, onUpload, onRemove }) => {
+  onExtractPrompt?: () => void;
+  isExtractingPrompt?: boolean;
+  onOpenBuilder?: () => void;
+}> = ({ image, onUpload, onRemove, onExtractPrompt, isExtractingPrompt, onOpenBuilder }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const processFile = (file: File) => {
@@ -311,17 +315,48 @@ const ReferenceImageUpload: React.FC<{
 
   if (image) {
     return (
-      <div className="relative group border border-slate-700/80 bg-slate-950 rounded-xl overflow-hidden h-24 flex items-center justify-center">
-        <img src={`data:${image.mimeType};base64,${image.base64}`} alt="Reference" className="w-full h-full object-cover" />
-        <div className="absolute bottom-1.5 left-2 bg-black/75 text-[10px] text-indigo-300 px-2 py-0.5 rounded font-semibold">
-          🎨 Ảnh Style / Mood Tham Chiếu
+      <div className="space-y-1.5 bg-slate-950/80 border border-indigo-500/40 rounded-xl p-2">
+        <div className="relative group rounded-lg overflow-hidden h-24 flex items-center justify-center bg-slate-900">
+          <img src={`data:${image.mimeType};base64,${image.base64}`} alt="Reference" className="w-full h-full object-cover" />
+          <div className="absolute bottom-1.5 left-2 bg-black/80 text-[10px] text-indigo-300 px-2 py-0.5 rounded font-semibold border border-indigo-500/30">
+            🎨 Ảnh Tham Chiếu Style / Nội Thất
+          </div>
+          <button
+            onClick={onRemove}
+            className="absolute top-1.5 right-1.5 bg-red-600/90 rounded-full text-white p-1 hover:bg-red-500 transition shadow"
+            title="Xóa ảnh tham chiếu"
+          >
+            <Icon name="x-mark" className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <button
-          onClick={onRemove}
-          className="absolute top-1.5 right-1.5 bg-red-600/90 rounded-full text-white p-1 hover:bg-red-500 transition"
-        >
-          <Icon name="x-mark" className="w-3.5 h-3.5" />
-        </button>
+
+        {(onExtractPrompt || onOpenBuilder) && (
+          <div className="grid grid-cols-2 gap-1.5">
+            {onExtractPrompt && (
+              <button
+                type="button"
+                onClick={onExtractPrompt}
+                disabled={isExtractingPrompt}
+                className="bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/50 text-indigo-200 hover:text-white text-[10px] font-bold py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1 disabled:opacity-50"
+                title="AI tự động phân tích ảnh tham chiếu này và điền Prompt nội thất chi tiết"
+              >
+                <Icon name="sparkles" className="w-3.5 h-3.5 text-amber-400" />
+                <span>{isExtractingPrompt ? 'Đang trích xuất...' : 'Tạo Prompt Từ Ảnh Này'}</span>
+              </button>
+            )}
+            {onOpenBuilder && (
+              <button
+                type="button"
+                onClick={onOpenBuilder}
+                className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-amber-300 text-[10px] font-bold py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1"
+                title="Mở bảng bóc tách 5 lớp (Phong cách, Bảng màu, Vật liệu, Đồ rời, Ánh sáng)"
+              >
+                <Icon name="wand" className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Bóc Tách 5 Lớp Chi Tiết</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -333,7 +368,7 @@ const ReferenceImageUpload: React.FC<{
         className="w-full border border-dashed border-slate-700/80 hover:border-indigo-500/60 rounded-xl p-2.5 text-xs text-slate-400 hover:text-slate-200 bg-slate-950/40 hover:bg-slate-900/60 transition flex items-center justify-center gap-2"
       >
         <Icon name="sparkles" className="w-4 h-4 text-indigo-400" />
-        <span>+ Thêm ảnh tham chiếu Mood / Ánh sáng (Tùy chọn)</span>
+        <span>+ Tải Ảnh Tham Chiếu Nội Thất / Mood (Trích xuất Prompt)</span>
       </button>
       <input
         type="file"
@@ -863,6 +898,7 @@ export default function App() {
   ];
 
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [isBuildingRefPrompt, setIsBuildingRefPrompt] = useState(false);
 
   // Floorplan state
   const [floorplanPrompt, setFloorplanPrompt] = useState(
@@ -993,6 +1029,37 @@ export default function App() {
       }
     } finally {
       setIsGeneratingDesc(false);
+    }
+  };
+
+  const handleExtractPromptFromReference = async (refImg?: SourceImage | null) => {
+    const targetRef = refImg || referenceImage;
+    if (!targetRef) {
+      alert('Vui lòng tải lên Ảnh Tham Chiếu Nội Thất trước khi trích xuất Prompt.');
+      return;
+    }
+    setIsBuildingRefPrompt(true);
+    try {
+      const analysis = await buildInteriorPromptFromReference(
+        targetRef,
+        activeTab === 'floorplan' ? roomType : 'Không gian nội thất theo ảnh tham chiếu',
+        'Tự động theo ảnh tham chiếu',
+        ''
+      );
+      const extracted = analysis.vietnamesePrompt || analysis.englishPrompt;
+      if (activeTab === 'exterior') setExteriorPrompt(extracted);
+      else if (activeTab === 'interior') setInteriorPrompt(extracted);
+      else setFloorplanPrompt(extracted);
+    } catch (error: any) {
+      console.error(error);
+      const errMsg = error?.message || String(error);
+      if (errMsg.includes('API_KEY is not configured')) {
+        setShowApiKeyModal(true);
+      } else {
+        alert(`Không thể trích xuất prompt từ ảnh tham chiếu: ${errMsg}`);
+      }
+    } finally {
+      setIsBuildingRefPrompt(false);
     }
   };
 
@@ -1141,7 +1208,7 @@ export default function App() {
     { id: 'interior', label: 'Render Nội Thất', short: 'Nội Thất', icon: 'home', desc: 'Không gian nội thất & vật liệu PBR' },
     { id: 'floorplan', label: 'Mặt Bằng 2D ➔ 3D', short: '2D ➔ 3D', icon: 'cube', desc: 'Dựng phối cảnh 3D từ bản vẽ CAD/2D' },
     { id: 'edit', label: 'Canvas Inpainting', short: 'Inpainting', icon: 'brush', desc: 'Khoanh vùng sửa chi tiết & Camera Raw' },
-    { id: 'magic-prompt', label: '20 Magic Prompts', short: '20 Prompts', icon: 'wand', desc: 'Tự động sinh 20 góc máy nhiếp ảnh' },
+    { id: 'magic-prompt', label: 'Prompt Nội Thất & 20 Góc', short: 'AI Prompt', icon: 'wand', desc: 'Tạo prompt nội thất từ ảnh mẫu & 20 góc' },
     { id: 'utilities', label: 'Bộ Công Cụ AI', short: 'Tiện Ích', icon: 'sparkles', desc: 'Tách Map 3D, Tiến độ thi công & Xuất PDF' },
     { id: 'virtual-tour', label: 'Virtual Tour 360°', short: 'Tour 360°', icon: 'camera-rotate', desc: 'Điều hướng góc nhìn không gian 3D' }
   ];
@@ -1489,6 +1556,9 @@ export default function App() {
                     image={referenceImage}
                     onUpload={setReferenceImage}
                     onRemove={() => setReferenceImage(null)}
+                    onExtractPrompt={() => handleExtractPromptFromReference()}
+                    isExtractingPrompt={isBuildingRefPrompt}
+                    onOpenBuilder={() => setActiveTab('magic-prompt')}
                   />
 
                   {/* Aspect Ratio & Resolution Controls */}
@@ -1630,19 +1700,31 @@ export default function App() {
 
                   {/* Prompt Input with AI Vision Auto-Describe Button */}
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Prompt Chỉ Dẫn Kiến Trúc & Vật Liệu
                       </label>
-                      <button
-                        onClick={() => handleAnalyzeSourceImage()}
-                        disabled={!sourceImage || isGeneratingDesc}
-                        className="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md transition flex items-center gap-1 disabled:opacity-40"
-                        title="Dùng Gemini Vision tự động phân tích ảnh gốc và viết Prompt"
-                      >
-                        <Icon name="wand" className="w-3 h-3" />
-                        <span>{isGeneratingDesc ? 'Đang đọc ảnh...' : 'AI Đọc Ảnh ➔ Prompt'}</span>
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('magic-prompt')}
+                          className="text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md transition flex items-center gap-1"
+                          title="Mở công cụ Xây Dựng Prompt Nội Thất Từ Ảnh Tham Chiếu (Bóc tách 5 lớp)"
+                        >
+                          <Icon name="sparkles" className="w-3 h-3" />
+                          <span>Prompt Từ Ảnh Mẫu</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAnalyzeSourceImage()}
+                          disabled={!sourceImage || isGeneratingDesc}
+                          className="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md transition flex items-center gap-1 disabled:opacity-40"
+                          title="Dùng Gemini Vision tự động phân tích ảnh gốc và viết Prompt"
+                        >
+                          <Icon name="wand" className="w-3 h-3" />
+                          <span>{isGeneratingDesc ? 'Đang đọc...' : 'AI Đọc Ảnh Gốc'}</span>
+                        </button>
+                      </div>
                     </div>
                     <textarea
                       rows={3}
@@ -1953,7 +2035,17 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'magic-prompt' && <MagicPromptTab onEditRequest={sendDataUrlToEditor} />}
+          {activeTab === 'magic-prompt' && (
+            <MagicPromptTab
+              onEditRequest={sendDataUrlToEditor}
+              initialReferenceImage={referenceImage}
+              onApplyPromptToStudio={(builtPrompt, refImg) => {
+                setReferenceImage(refImg);
+                setInteriorPrompt(builtPrompt);
+                setActiveTab('interior');
+              }}
+            />
+          )}
           {activeTab === 'utilities' && <UtilitiesTab onEditRequest={sendDataUrlToEditor} />}
           {activeTab === 'virtual-tour' && <VirtualTourTab onEditRequest={sendDataUrlToEditor} />}
         </main>

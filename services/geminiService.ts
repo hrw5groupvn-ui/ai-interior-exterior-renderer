@@ -517,3 +517,90 @@ YÊU CẦU QUAN TRỌNG:
     .slice(0, 20);
   return prompts;
 };
+
+export interface InteriorPromptAnalysis {
+  style: string;
+  colorPalette: string;
+  materials: string;
+  furniture: string;
+  lightingAndCamera: string;
+  vietnamesePrompt: string;
+  englishPrompt: string;
+}
+
+/**
+ * Analyzes an uploaded reference interior image and constructs a structured interior design prompt.
+ */
+export const buildInteriorPromptFromReference = async (
+  referenceImage: SourceImage,
+  targetRoomType: string = 'Tự động theo ảnh',
+  lightingOverride: string = 'Tự động theo ảnh',
+  customNotes: string = ''
+): Promise<InteriorPromptAnalysis> => {
+  const roomInstruction =
+    targetRoomType && targetRoomType !== 'Tự động theo ảnh'
+      ? `Áp dụng phong cách và vật liệu của ảnh tham chiếu này cho không gian: "${targetRoomType}".`
+      : 'Xác định đúng loại không gian nội thất trong ảnh tham chiếu.';
+
+  const lightingInstruction =
+    lightingOverride && lightingOverride !== 'Tự động theo ảnh'
+      ? `Kịch bản ánh sáng ưu tiên: "${lightingOverride}".`
+      : 'Phân tích kịch bản ánh sáng thực tế từ ảnh tham chiếu.';
+
+  const systemPrompt = `Bạn là một Kiến trúc sư Nội thất Trưởng (Lead Interior Designer) và chuyên gia Prompt Engineering cho V-Ray / Corona / Gemini Image AI.
+Hãy phân tích bức ảnh nội thất tham chiếu được tải lên và bóc tách chi tiết để xây dựng Prompt tạo ảnh nội thất siêu thực.
+${roomInstruction}
+${lightingInstruction}
+${customNotes ? `Yêu cầu bổ sung từ người dùng: "${customNotes}".` : ''}
+
+Hãy trả về KẾT QUẢ DƯỚI DẠNG JSON HỢP LỆ (không bọc trong markdown, chỉ trả về đối tượng JSON thuần) theo đúng cấu trúc sau:
+{
+  "style": "Tên phong cách thiết kế chủ đạo & đặc trưng không gian (bằng tiếng Việt, ví dụ: Hiện đại Luxury kết hợp Gỗ Óc Chó...)",
+  "colorPalette": "Bảng màu chủ đạo, tỷ lệ phối màu 60-30-10 & cảm xúc không gian (bằng tiếng Việt)",
+  "materials": "Chi tiết vật liệu Sàn, Tường, Vách trang trí, Trần, Kim loại/Đá/Gỗ/Vải (bằng tiếng Việt, mô tả rõ bề mặt bóng/mờ/vân)",
+  "furniture": "Các món đồ nội thất chính, kiểu dáng, chất liệu bọc và đồ decor điểm nhấn (bằng tiếng Việt)",
+  "lightingAndCamera": "Hệ thống ánh sáng tự nhiên, đèn nhân tạo (nhiệt độ màu K, đèn hắt khe, đèn thả) và góc máy nhiếp ảnh (bằng tiếng Việt)",
+  "vietnamesePrompt": "Một đoạn Prompt Tiếng Việt hoàn chỉnh, mạch lạc, giàu tính hình ảnh (khoảng 90-140 từ) kết hợp đầy đủ Không gian + Phong cách + Vật liệu Sàn/Tường/Trần + Đồ nội thất + Ánh sáng + Chất lượng 8K V-Ray để dùng tạo ảnh ngay.",
+  "englishPrompt": "A master-level English architectural visualization prompt (90-140 words) translating all extracted style, PBR materials, furniture, global illumination lighting, camera lens (24mm tilt-shift, f/8), V-Ray 6 & Corona Renderer photorealism, 8K Ultra-HD."
+}`;
+
+  const rawText = await generateTextWithFallback(
+    [
+      { inlineData: { data: referenceImage.base64, mimeType: referenceImage.mimeType } },
+      { text: systemPrompt }
+    ],
+    0.4
+  );
+
+  try {
+    const cleaned = rawText
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    const jsonSlice = firstBrace !== -1 && lastBrace !== -1 ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
+    const parsed = JSON.parse(jsonSlice);
+    return {
+      style: parsed.style || 'Hiện đại Luxury',
+      colorPalette: parsed.colorPalette || 'Tông màu trung tính ấm áp, sang trọng',
+      materials: parsed.materials || 'Sàn gỗ tự nhiên, vách ốp đá Marble và hệ lam gỗ',
+      furniture: parsed.furniture || 'Đồ nội thất thiết kế đồng bộ, đường nét tinh tế',
+      lightingAndCamera: parsed.lightingAndCamera || 'Ánh sáng tự nhiên kết hợp đèn LED ấm 3000K, góc máy ngang tầm mắt',
+      vietnamesePrompt: parsed.vietnamesePrompt || rawText,
+      englishPrompt: parsed.englishPrompt || rawText
+    };
+  } catch {
+    return {
+      style: 'Phân tích tự động từ ảnh tham chiếu',
+      colorPalette: 'Theo tông màu ảnh tham chiếu',
+      materials: 'Theo vật liệu trong ảnh tham chiếu',
+      furniture: 'Theo bố cục nội thất tham chiếu',
+      lightingAndCamera: 'Ánh sáng thực tế chuẩn nhiếp ảnh kiến trúc',
+      vietnamesePrompt: rawText,
+      englishPrompt: `Masterpiece interior design photography, V-Ray 6 & Corona Renderer photorealistic visualization: ${rawText}`
+    };
+  }
+};
+
