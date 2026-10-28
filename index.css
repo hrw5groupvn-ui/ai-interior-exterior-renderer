@@ -4,51 +4,66 @@
 
 @layer utilities {
   .glass-panel {
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13, 18, 30, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .studio-dock {
+    background: rgba(9, 13, 22, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+
+  .studio-canvas-bg {
+    background-color: #060911;
+    background-image: 
+      radial-gradient(rgba(99, 102, 241, 0.14) 1px, transparent 1px),
+      radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
   }
 
   .glass-panel-hover {
-    transition: all 0.25s ease-in-out;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .glass-panel-hover:hover {
-    background: rgba(30, 41, 59, 0.75);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), 0 0 15px rgba(99, 102, 241, 0.15);
+    background: rgba(24, 33, 52, 0.85);
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 18px rgba(99, 102, 241, 0.18);
   }
 
   .glass-card {
-    background: rgba(30, 41, 59, 0.4);
+    background: rgba(19, 27, 46, 0.55);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .glow-active {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
-    border-color: rgba(129, 140, 248, 0.6) !important;
+    box-shadow: 0 0 22px rgba(99, 102, 241, 0.38);
+    border-color: rgba(129, 140, 248, 0.7) !important;
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Slim Studio Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(9, 13, 22, 0.4);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.6);
+  background: rgba(71, 85, 105, 0.55);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.7);
+  background: rgba(99, 102, 241, 0.8);
 }
 
 /* Subtle Pulsing Animation for Loading States */
@@ -57,7 +72,7 @@
     box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
   }
   50% {
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 32px rgba(99, 102, 241, 0.55);
   }
 }
 
