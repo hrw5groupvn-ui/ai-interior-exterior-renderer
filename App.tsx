@@ -20,6 +20,7 @@ import { UtilitiesTab } from './components/UtilitiesTab';
 import { MagicPromptTab } from './components/MagicPromptTab';
 import { VirtualTourTab } from './components/VirtualTourTab';
 import { CameraRawEditor } from './components/CameraRawEditor';
+import { TechnicalSpecModal } from './components/TechnicalSpecModal';
 
 // --- Model Selector Dropdown Component ---
 const ModelSelector: React.FC<{
@@ -796,6 +797,7 @@ export default function App() {
   const [showDonate, setShowDonate] = useState(false);
   const [showZalo, setShowZalo] = useState(false);
   const [showWelcomePro, setShowWelcomePro] = useState(false);
+  const [techModalMode, setTechModalMode] = useState<'technical' | 'material' | null>(null);
 
   // Global ESC key listener to close any open modal and return to main app UI
   useEffect(() => {
@@ -807,6 +809,7 @@ export default function App() {
         setShowApiKeyModal(false);
         setImageForFullscreen(null);
         setUpscaledImageForModal(null);
+        setTechModalMode(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1823,6 +1826,30 @@ export default function App() {
                       </button>
                     )}
 
+                    {(selectedImage || sourceImage) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setTechModalMode('technical')}
+                          className="bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/50 text-indigo-200 hover:text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Xuất Bản Vẽ Kỹ Thuật Bổ Nội Thất (CAD 2D / Phân Rã Đồ Gỗ 3D) từ phối cảnh"
+                        >
+                          <Icon name="cube" className="w-3.5 h-3.5 text-indigo-400" />
+                          <span>📐 Bản Vẽ Bổ Nội Thất</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setTechModalMode('material')}
+                          className="bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/40 text-emerald-200 hover:text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Xuất Bảng Chỉ Dẫn Chất Liệu & Bóc Tách Mã Vật Tư từ phối cảnh"
+                        >
+                          <Icon name="sparkles" className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>🪵 Bảng Chất Liệu</span>
+                        </button>
+                      </>
+                    )}
+
                     {selectedImage && (
                       <>
                         <button
@@ -1906,11 +1933,35 @@ export default function App() {
                       {compareMode && sourceDataUrl ? (
                         <BeforeAfterSlider beforeUrl={sourceDataUrl} afterUrl={selectedImage} />
                       ) : (
-                        <img
-                          src={selectedImage}
-                          alt="Render Result"
-                          className="max-w-full max-h-[66vh] object-contain rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.75)] border border-slate-800/80"
-                        />
+                        <div className="relative flex flex-col items-center justify-center w-full h-full">
+                          <img
+                            src={selectedImage}
+                            alt="Render Result"
+                            className="max-w-full max-h-[60vh] object-contain rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.75)] border border-slate-800/80"
+                          />
+                          {/* Floating Quick Technical & Material Export Bar inside Perspective View */}
+                          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl shadow-xl">
+                            <span className="text-[11px] font-bold text-slate-400 mr-1 hidden sm:inline">
+                              Hồ sơ kỹ thuật từ phối cảnh:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setTechModalMode('technical')}
+                              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow cursor-pointer"
+                            >
+                              <Icon name="cube" className="w-3.5 h-3.5" />
+                              <span>📐 Xuất Bản Vẽ Kỹ Thuật Bổ Nội Thất (CAD / 3D)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTechModalMode('material')}
+                              className="bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-200 hover:text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Icon name="sparkles" className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>🪵 Xuất Bảng Chỉ Dẫn Chất Liệu & Vật Tư</span>
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -1925,6 +1976,24 @@ export default function App() {
                         Tải lên ảnh phác thảo / 3D khối / mặt bằng 2D ở bảng điều khiển bên trái, chọn tỷ lệ khung hình & độ phân giải (1K/2K/4K) rồi bấm{' '}
                         <b className="text-indigo-400">Bắt Đầu Render AI</b>.
                       </p>
+                      <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setTechModalMode('technical')}
+                          className="bg-slate-900 hover:bg-indigo-600/25 border border-slate-700 hover:border-indigo-500/50 text-indigo-300 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Icon name="cube" className="w-4 h-4" />
+                          <span>📐 Mở Trình Xuất Bản Vẽ Bổ Nội Thất</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTechModalMode('material')}
+                          className="bg-slate-900 hover:bg-emerald-600/25 border border-slate-700 hover:border-emerald-500/50 text-emerald-300 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Icon name="sparkles" className="w-4 h-4" />
+                          <span>🪵 Mở Trình Bóc Tách Chất Liệu</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2079,6 +2148,22 @@ export default function App() {
             updated[selectedImageIndex] = `data:${edited.mimeType};base64,${edited.base64}`;
             setGeneratedImages(updated);
             setIsStudioCameraRawOpen(false);
+          }}
+        />
+      )}
+      {techModalMode && (
+        <TechnicalSpecModal
+          initialPerspective={selectedImage ? dataUrlToSourceImage(selectedImage) : sourceImage}
+          initialMode={techModalMode}
+          onClose={() => setTechModalMode(null)}
+          onAddToStudioGallery={(sheetDataUrl) => {
+            setGeneratedImages((prev) => [sheetDataUrl, ...prev]);
+            setSelectedImageIndex(0);
+            setCompareMode(false);
+          }}
+          onSendToEditor={(sheetDataUrl) => {
+            setTechModalMode(null);
+            sendDataUrlToEditor(sheetDataUrl);
           }}
         />
       )}

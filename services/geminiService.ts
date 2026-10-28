@@ -604,3 +604,187 @@ Hãy trả về KẾT QUẢ DƯỚI DẠNG JSON HỢP LỆ (không bọc trong m
   }
 };
 
+export interface TechnicalJoineryItem {
+  code: string;
+  name: string;
+  dimensions: string;
+  coreMaterial: string;
+  surfaceFinish: string;
+  hardwareAndNotes: string;
+}
+
+export interface MaterialSpecItem {
+  code: string;
+  zone: string;
+  materialName: string;
+  colorHex: string;
+  finishType: string;
+  brandSuggestion: string;
+  applicationNote: string;
+}
+
+export interface TechnicalAndMaterialReport {
+  roomSummary: string;
+  joineryItems: TechnicalJoineryItem[];
+  materialItems: MaterialSpecItem[];
+  constructionNotes: string;
+}
+
+export type TechnicalOutputMode =
+  | 'cad-elevation'
+  | 'exploded-joinery'
+  | 'orthographic-4view'
+  | 'material-callout'
+  | 'material-board';
+
+/**
+ * Analyzes a rendered perspective image to extract a structured Interior Joinery Breakdown (Bóc tách bổ nội thất)
+ * and Material Specification Schedule (Bảng kê chất liệu & mã vật tư).
+ */
+export const analyzePerspectiveForTechnicalSpecs = async (
+  perspectiveImage: SourceImage,
+  focusNote: string = ''
+): Promise<TechnicalAndMaterialReport> => {
+  const prompt = `Bạn là Kiến trúc sư Chủ trì Hồ sơ Kỹ thuật Thi công Nội thất (Lead Interior Technical Architect & QS) tại Việt Nam.
+Hãy phân tích kỹ bức ảnh phối cảnh kiến trúc / nội thất này và lập bảng Bóc Tách Kỹ Thuật Bổ Nội Thất & Bảng Chỉ Dẫn Chất Liệu Thi Công.
+${focusNote ? `Hạng mục ưu tiên tập trung: "${focusNote}".` : ''}
+
+Hãy trả về KẾT QUẢ DƯỚI DẠNG JSON HỢP LỆ (chỉ trả về JSON thuần, không bọc trong markdown) theo cấu trúc sau:
+{
+  "roomSummary": "Tóm tắt ngắn gọn không gian, phong cách và tiêu chuẩn kỹ thuật hoàn thiện (1-2 câu tiếng Việt)",
+  "joineryItems": [
+    {
+      "code": "NT-01",
+      "name": "Tên hạng mục đồ nội thất / vách ốp (VD: Hệ tủ Tivi kịch trần & Vách ốp đá)",
+      "dimensions": "Kích thước thông thủy ước tính chuẩn nhân trắc học (VD: D2800 x S400 x C2700 mm)",
+      "coreMaterial": "Cốt vật liệu kết cấu (VD: Gỗ MDF lõi xanh chống ẩm An Cường dày 17mm, hậu 9mm / Khung gỗ sồi tự nhiên)",
+      "surfaceFinish": "Bề mặt hoàn thiện (VD: Phủ Melamine vân gỗ óc chó kết hợp cánh kính cường lực khung nhôm mạ Anode)",
+      "hardwareAndNotes": "Phụ kiện & lưu ý bổ kỹ thuật (VD: Bản lề giảm chấn Blum, ray âm giảm chấn, soi rãnh gắn LED thanh nhôm 3000K)"
+    }
+  ],
+  "materialItems": [
+    {
+      "code": "VL-01",
+      "zone": "Vị trí áp dụng (VD: Sàn chính / Vách sau Sofa / Cánh tủ / Đá mặt bàn)",
+      "materialName": "Tên chất liệu chi tiết (VD: Đá Marble Trắng Vân Mây Volakas / Gỗ Óc Chó Bắc Mỹ)",
+      "colorHex": "#D8D2C9",
+      "finishType": "Đặc tính bề mặt PBR (VD: Polished Bóng kính / Matte Mờ / Brushed Xước mờ)",
+      "brandSuggestion": "Mã vật tư / Thương hiệu tham khảo tại VN (VD: An Cường MS 432 / Đá Vicostone BQ8815 / Sơn Jotun)",
+      "applicationNote": "Quy cách thi công (VD: Ốp phẳng mạch khít 1.5mm, vát cạnh 45 độ, chống thấm 4 mặt)"
+    }
+  ],
+  "constructionNotes": "Lưu ý kỹ thuật tổng thể khi đo đạc hiện trạng, bổ bản vẽ xưởng sản xuất CNC và lắp đặt tại công trình."
+}`;
+
+  const rawText = await generateTextWithFallback(
+    [
+      { inlineData: { data: perspectiveImage.base64, mimeType: perspectiveImage.mimeType } },
+      { text: prompt }
+    ],
+    0.35
+  );
+
+  try {
+    const cleaned = rawText
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    const jsonSlice = firstBrace !== -1 && lastBrace !== -1 ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
+    const parsed = JSON.parse(jsonSlice);
+    return {
+      roomSummary: parsed.roomSummary || 'Hồ sơ bóc tách kỹ thuật nội thất & chỉ dẫn chất liệu từ phối cảnh 3D.',
+      joineryItems: Array.isArray(parsed.joineryItems) ? parsed.joineryItems : [],
+      materialItems: Array.isArray(parsed.materialItems) ? parsed.materialItems : [],
+      constructionNotes:
+        parsed.constructionNotes ||
+        'Kiểm tra kích thước thực tế tại công trình trước khi xuất file cắt CNC và đặt hàng vật tư.'
+    };
+  } catch {
+    return {
+      roomSummary: 'Hồ sơ bóc tách kỹ thuật nội thất & chỉ dẫn chất liệu từ phối cảnh 3D.',
+      joineryItems: [
+        {
+          code: 'NT-01',
+          name: 'Hệ nội thất trung tâm theo phối cảnh',
+          dimensions: 'Theo kích thước thực tế công trình (mm)',
+          coreMaterial: 'MDF lõi xanh chống ẩm An Cường dày 17.5mm kết hợp khung xương chịu lực',
+          surfaceFinish: 'Hoàn thiện Melamine / Laminate / Sơn Inchem theo màu phối cảnh',
+          hardwareAndNotes: 'Phụ kiện bản lề giảm chấn, ray trượt âm, đèn LED thanh nhôm định hình 3000K'
+        }
+      ],
+      materialItems: [
+        {
+          code: 'VL-01',
+          zone: 'Bề mặt chủ đạo trong phối cảnh',
+          materialName: 'Vật liệu hoàn thiện theo phối cảnh 3D',
+          colorHex: '#C8B9A6',
+          finishType: 'Matte / Satin',
+          brandSuggestion: 'An Cường / Vicostone / Jotun',
+          applicationNote: rawText.slice(0, 200)
+        }
+      ],
+      constructionNotes: rawText
+    };
+  }
+};
+
+/**
+ * Generates a high-resolution Technical Drawing (Bản vẽ kỹ thuật bổ nội thất) or Material Callout Board (Bảng chất liệu)
+ * directly from a rendered perspective image.
+ */
+export const generateTechnicalOrMaterialBoardImage = async (
+  perspectiveImage: SourceImage,
+  mode: TechnicalOutputMode,
+  customFocus: string = ''
+): Promise<string | null> => {
+  const focusClause = customFocus.trim()
+    ? ` Focus specifically on: "${customFocus.trim()}".`
+    : '';
+
+  const modePrompts: Record<TechnicalOutputMode, string> = {
+    'cad-elevation': `Convert this 3D interior/architectural perspective render into a professional 2D Architectural & Interior CAD Technical Shop Drawing (Bản vẽ kỹ thuật bổ nội thất 2D).
+CRITICAL INSTRUCTIONS:
+- Present on a clean white architectural drafting sheet with crisp black and dark-blue vector CAD linework.
+- Show accurate 2D orthographic front elevation and side section views of the furniture, cabinetry, wall paneling, and architectural elements seen in the image.${focusClause}
+- Include detailed architectural dimension lines in millimeters (mm), level height markers, cabinet compartment divisions, door opening direction dashed lines, and clean technical callout labels.
+- No photorealistic shading; strictly crisp 2D technical CAD drafting style ready for workshop production.`,
+
+    'exploded-joinery': `Create a professional Exploded Axonometric Interior Joinery & Technical Assembly Drawing (Bản vẽ bổ phân rã cấu tạo đồ nội thất 3D) based on the furniture and interior elements in this image.${focusClause}
+CRITICAL INSTRUCTIONS:
+- Show an isometric/axonometric exploded view separating the structural core panels (MDF/plywood carcass), exterior doors/drawers, stone/marble countertops, metal trims, and recessed LED channels.
+- Use clean architectural technical illustration style on a white/light blueprint background with precise leader lines, component numbering (NT-01, NT-02...), and dimension annotations in millimeters (mm).`,
+
+    'orthographic-4view': `Generate a comprehensive 4-View Architectural Interior Technical Drawing Sheet (Bản vẽ kỹ thuật 4 góc chiếu: Mặt bằng - Mặt đứng chính - Mặt đứng bên - Mặt cắt chi tiết) derived from this rendered space.${focusClause}
+CRITICAL INSTRUCTIONS:
+- Organize the sheet into 4 neat orthographic CAD viewports on a white architectural title-block sheet.
+- Include dimension lines (mm), grid axes, section hatches for wood/stone/wall, and clear technical drafting linework.`,
+
+    'material-callout': `Create a professional Annotated Interior Material Callout & Specification Presentation Sheet (Bản vẽ chỉ dẫn chất liệu trực tiếp trên phối cảnh) from this render.${focusClause}
+CRITICAL INSTRUCTIONS:
+- Keep the rendered interior perspective clearly visible in the center/main area, framed on a clean architectural presentation sheet.
+- Draw crisp, elegant architectural leader lines (đường gióng chỉ dẫn) pointing to the key materials in the room (flooring, wall cladding, wood cabinetry, stone surface, sofa fabric, metal trim, lighting).
+- Connect those leader lines to magnified circular or square high-resolution PBR material swatch callouts arranged neatly along the side/bottom margin, each with a clean material code tag (VL-01, VL-02...) and texture zoom-in.`,
+
+    'material-board': `Create a luxury Architectural Material & Finishes Specification Moodboard (Bảng mẫu chất liệu & Moodboard vật tư nội thất) extracted directly from the materials used in this rendered space.${focusClause}
+CRITICAL INSTRUCTIONS:
+- Arrange realistic flat-lay and neatly gridded physical material samples on a clean designer board: wood veneer plank sample, marble/stone slab sample, upholstery fabric/leather swatch, brushed PVD metal strip, wall paint finish card, and a 5-color palette bar.
+- Include a smaller framed reference of the original rendered room in one corner and clean specification labels (VL-01, VL-02...) next to each material swatch.`
+  };
+
+  const results = await generateImages(
+    perspectiveImage,
+    modePrompts[mode],
+    'interior',
+    1,
+    null,
+    false,
+    true,
+    { aspectRatio: '16:9', imageSize: '2K' }
+  );
+
+  return results.length > 0 ? results[0] : null;
+};
+

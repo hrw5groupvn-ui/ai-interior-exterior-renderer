@@ -143,6 +143,37 @@ interface UtilityTaskDef {
 
 const UTILITY_TASKS: UtilityTaskDef[] = [
     {
+        id: 'interior_shop_drawing',
+        name: 'Bản Vẽ Kỹ Thuật Bổ Nội Thất (CAD)',
+        description: 'Chuyển ảnh phối cảnh nội thất thành bản vẽ kỹ thuật CAD 2D hoặc bản vẽ phân rã cấu tạo đồ gỗ kèm kích thước (mm).',
+        icon: 'pencil',
+        inputs: 1,
+        inputLabels: ['Ảnh Phối Cảnh Nội Thất'],
+        service: 'generateImages',
+        promptPlaceholder: 'Ví dụ: Bổ kỹ thuật mặt đứng hệ tủ Tivi + vách ốp đá, ghi rõ kích thước mm',
+        promptEngineer: (p) => `Convert this 3D interior perspective render into a professional Architectural & Interior CAD Technical Shop Drawing (Bản vẽ kỹ thuật bổ nội thất) on a clean white drafting sheet with black/dark-blue vector CAD linework, dimension lines in millimeters (mm), cabinet compartment divisions, and technical callouts. User focus: "${p}".`,
+        predefinedPrompts: [
+            { label: 'Bản vẽ CAD Mặt đứng + Kích thước (mm)', value: '2D orthographic front elevation CAD drawing with detailed millimeter dimension lines, cabinet divisions, and height markers on white background' },
+            { label: 'Bản vẽ Bổ phân rã cấu tạo đồ gỗ (Exploded 3D)', value: 'Exploded axonometric interior joinery assembly diagram showing MDF core panels, doors, stone top, metal trim, and dimension callouts' },
+            { label: 'Bản vẽ Kỹ thuật 4 góc chiếu (Bằng - Đứng - Cắt)', value: '4-view architectural interior technical sheet showing Plan, Front Elevation, Side Elevation, and Section detail with dimensions in mm' }
+        ]
+    },
+    {
+        id: 'material_callout_sheet',
+        name: 'Bảng Chỉ Dẫn Chất Liệu (Material Callout)',
+        description: 'Tạo bản vẽ ghi chú đường gióng chỉ dẫn chất liệu trực tiếp trên phối cảnh hoặc bảng Moodboard mẫu vật tư thi công.',
+        icon: 'sparkles',
+        inputs: 1,
+        inputLabels: ['Ảnh Phối Cảnh 3D'],
+        service: 'generateImages',
+        promptPlaceholder: 'Ví dụ: Chỉ dẫn chi tiết chất liệu sàn gỗ, đá Marble vách tivi, da sofa và đèn LED',
+        promptEngineer: (p) => `Create a professional Annotated Interior Material Callout & Specification Sheet from this perspective render. Draw clean architectural leader lines pointing to key surfaces in the room connected to magnified circular/square PBR material swatches and material tags (VL-01, VL-02...) along the margin. User focus: "${p}".`,
+        predefinedPrompts: [
+            { label: 'Phối cảnh + Đường gióng Callout chất liệu', value: 'Keep the perspective render and draw clean leader lines pointing to flooring, wall stone, wood cabinets, sofa fabric, and lighting with magnified material swatches on the margin' },
+            { label: 'Bảng Moodboard mẫu vật tư & Mã màu', value: 'Luxury architectural material specification board showing physical samples of wood veneer, marble slab, fabric textile, brushed PVD metal, and 5-color palette bar extracted from the room' }
+        ]
+    },
+    {
         id: 'extract_3d_maps',
         name: 'Tách Map Material 3D',
         description: 'Tách ảnh texture thành các map chính dùng trong 3D: Diffuse, Reflection, Roughness, Metallic, Normal.',
